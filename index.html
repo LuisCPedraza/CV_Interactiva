@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Interactivo - Luis Carlos Pedraza</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="hero">
+            <div class="hero__text">
+                <p class="kicker">CV interactivo</p>
+                <h1>Mi vida en un juego</h1>
+                <p class="lede">Salta sobre los hitos para desbloquear cada capitulo y mirar mi historia en movimiento.</p>
+            </div>
+            <div class="hero__stats">
+                <div class="stat-row">
+                    <div class="stat">
+                        <span class="stat__label">Hitos</span>
+                        <span class="stat__value"><span id="hito-count">0</span>/<span id="hito-total">0</span></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat__label">Ano actual</span>
+                        <span class="stat__value" id="year-badge">----</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="game-panel">
+            <div class="controls">
+                <div class="controls__left">
+                    <span class="chip">Espacio / Tap para saltar</span>
+                    <span class="chip">P para pausar</span>
+                    <span class="chip">Vidas: <strong id="lives-count">3</strong></span>
+                </div>
+                <div class="controls__right">
+                    <div class="speed">
+                        <button class="speed__btn active" data-speed="1">Normal</button>
+                        <button class="speed__btn" data-speed="1.6">Rapido</button>
+                    </div>
+                    <div class="controls__actions">
+                        <button id="pause-btn" class="btn" type="button">Pausar</button>
+                        <button id="mute-btn" class="btn btn--ghost" type="button">Sonido</button>
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-frame">
+                <canvas id="gameCanvas" width="900" height="340"></canvas>
+            </div>
+            <div class="progress">
+                <div class="progress__bar" id="progress-bar"></div>
+            </div>
+        </section>
+
+        <section class="tabs">
+            <button class="tab active" data-target="story-panel">Historia</button>
+            <button class="tab" data-target="resume-panel">Hoja de vida</button>
+        </section>
+
+        <section class="panels">
+            <div id="story-panel" class="panel active">
+                <div id="info-box" class="info-box">
+                    <div class="info-box__label">Hito desbloqueado</div>
+                    <div class="info-box__title" id="hito-title">Esperando a que toques un evento...</div>
+                    <div class="info-box__desc" id="hito-desc">Muévete para revelar cada capitulo.</div>
+                </div>
+                <div class="timeline">
+                    <h2>Linea del tiempo</h2>
+                    <ul id="timeline-list"></ul>
+                </div>
+                <div class="badges">
+                    <h2>Logros</h2>
+                    <div class="badge-list" id="badge-list"></div>
+                </div>
+            </div>
+
+            <div id="resume-panel" class="panel">
+                <div class="resume">
+                    <div class="resume__header">
+                        <div>
+                            <h2>Luis Carlos Pedraza Corredor</h2>
+                            <p>Zarzal, Valle del Cauca, Colombia</p>
+                        </div>
+                        <div class="resume__contact">
+                            <span>(+57) 300 2672242</span>
+                            <span>carlos9380@gmail.com</span>
+                            <span>github.com/LuisCPedraza</span>
+                            <span>linkedin.com/in/luis-carlos-pedraza-corredor-98573564</span>
+                        </div>
+                    </div>
+                    <div class="resume__grid">
+                        <div class="resume__card">
+                            <h3>Perfil profesional</h3>
+                            <p>Estudiante de Tecnologia en Desarrollo de Software con experiencia en Java, Python, JavaScript, PHP, HTML, CSS y MySQL. He desarrollado apps de escritorio, proyectos web y modelos de IA.</p>
+                            <p>Mas de 10 anos liderando proyectos en construccion: equipos, planos y cumplimiento tecnico. Enfoque analitico, resolucion de problemas y coordinacion.</p>
+                        </div>
+                        <div class="resume__card">
+                            <h3>Habilidades tecnicas</h3>
+                            <p><strong>Lenguajes:</strong> Java, Python, JavaScript, PHP, HTML, CSS</p>
+                            <p><strong>Bases de datos:</strong> MySQL</p>
+                            <p><strong>Frameworks:</strong> Java Swing, Tkinter, TensorFlow.js, Streamlit, Bootstrap, Blade, Git, GitHub, Laravel</p>
+                            <p><strong>Herramientas:</strong> Ubuntu, Visual Studio Code, AutoCAD, Microsoft Office</p>
+                        </div>
+                        <div class="resume__card">
+                            <h3>Educacion</h3>
+                            <p>Tecnologia en Desarrollo de Software — Universidad del Valle (2023 - Presente)</p>
+                            <p>Curso basico de AutoCAD 2D — SENA (2012)</p>
+                            <p>Ingenieria Civil (incompleta) — Universidad La Gran Colombia (2011)</p>
+                            <p>Bachiller Academico — Academia Legion Britanica (2001)</p>
+                        </div>
+                        <div class="resume__card">
+                            <h3>Experiencia clave</h3>
+                            <p>Maestro de Obra — Importadora Oriente (2019 - 2022)</p>
+                            <p>Residente de Estructura — Soluciones y Construcciones (2016 - 2018)</p>
+                            <p>Residente de Estructura — Constructora Hiercon (2018 - 2019)</p>
+                            <p>Maestro General — Obras Civiles FAPEC (2007 - 2013)</p>
+                        </div>
+                        <div class="resume__card">
+                            <h3>Proyectos destacados</h3>
+                            <p>Calculadora grafica, simulacion de procesos, agenda con Tkinter, Conecta 4, Craps.</p>
+                            <p>Juego de cultura general, Preguntados con Java y MySQL, sistema de asignacion de salones.</p>
+                            <p>Clasificadores con CNN y MobileNetV2 (TensorFlow.js y Streamlit).</p>
+                        </div>
+                        <div class="resume__card">
+                            <h3>Objetivo profesional</h3>
+                            <p>Integrar mi experiencia en gestion de proyectos con desarrollo de software e IA para aportar soluciones innovadoras y seguir creciendo profesionalmente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div id="hito-modal" class="modal" aria-hidden="true">
+        <div class="modal__backdrop"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <h3 id="modal-title"></h3>
+            <div id="modal-desc" class="modal__content"></div>
+            <button type="button" id="modal-close" class="btn modal__btn">Continuar</button>
+        </div>
+    </div>
+    <script>
+        window.__mostrarErrorJuego = function (mensaje) {
+            var title = document.getElementById('hito-title');
+            var desc = document.getElementById('hito-desc');
+            var year = document.getElementById('year-badge');
+            if (title) title.textContent = 'Error cargando el juego';
+            if (desc) desc.textContent = mensaje;
+            if (year) year.textContent = 'ERR';
+        };
+
+        window.addEventListener('error', function (event) {
+            if (!event || !event.message) return;
+            window.__mostrarErrorJuego(event.message);
+        });
+
+        window.__scriptLoadError = function () {
+            window.__mostrarErrorJuego('No se pudo cargar script.js (revisa el servidor/Live Server).');
+        };
+    </script>
+    <script src="script.js" onerror="window.__scriptLoadError && window.__scriptLoadError()"></script>
+</body>
+</html>

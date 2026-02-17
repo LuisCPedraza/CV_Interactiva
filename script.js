@@ -1,0 +1,1607 @@
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const hitoTitle = document.getElementById('hito-title');
+const hitoDesc = document.getElementById('hito-desc');
+const hitoCount = document.getElementById('hito-count');
+const hitoTotal = document.getElementById('hito-total');
+const progressBar = document.getElementById('progress-bar');
+const timelineList = document.getElementById('timeline-list');
+const yearBadge = document.getElementById('year-badge');
+const infoBox = document.getElementById('info-box');
+const pauseBtn = document.getElementById('pause-btn');
+const muteBtn = document.getElementById('mute-btn');
+const sceneText = document.getElementById('scene-text');
+const badgeList = document.getElementById('badge-list');
+const tabButtons = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+const speedButtons = document.querySelectorAll('.speed__btn');
+const page = document.querySelector('.page');
+const modal = document.getElementById('hito-modal');
+const modalDialog = modal ? modal.querySelector('.modal__dialog') : null;
+const modalTitle = document.getElementById('modal-title');
+const modalDesc = document.getElementById('modal-desc');
+const modalCloseBtn = document.getElementById('modal-close');
+const livesCount = document.getElementById('lives-count');
+
+// ==================== PERSONAJE ====================
+let player = {
+    x: 50,
+    y: 200,
+    width: 30,
+    height: 30,
+    ySpeed: 0,
+    gravity: 0.5,
+    jumpPower: -10,
+    grounded: false
+};
+
+const groundY = 230;
+const groundHeight = 10;
+
+// Etapas del personaje (se actualizan al tocar un hito)
+let etapaActual = 'origen';
+
+// ==================== HITOS DE VIDA (descripciones mejoradas) ====================
+const HITOS_DATA = [
+    {
+        año: 1984,
+        titulo: 'Donde todo empezó',
+        desc: 'Nací el 14 de junio de 1984 en Paipa, Boyacá. Un pequeño municipio lleno de historia y tranquilidad. Sin saberlo, ese sería el punto de partida de un camino marcado por cambios constantes, esfuerzo y crecimiento personal.\n\nReflexión: Cada historia extraordinaria tiene un inicio sencillo.',
+        scene: 'El comienzo: Paipa, Boyacá. Todo inicia con algo simple.'
+    },
+    {
+        año: 1986,
+        titulo: 'Primer cambio de ciudad',
+        desc: 'A los dos años me trasladaron a Bogotá. Fue mi primer gran cambio, aunque era muy pequeño para entenderlo. Desde el inicio, la vida me enseñaba que adaptarse sería parte esencial de mi historia.',
+        scene: 'Cambiar de entorno también es aprender.'
+    },
+    {
+        año: 1988,
+        titulo: 'Primeros pasos académicos (1988–1990)',
+        desc: 'Estudié Prekínder, Kínder y Transición en el Jardín Infantil Acuarela, en el barrio San Antonio. Allí comenzaron mis primeras amistades, aprendizajes y responsabilidades.',
+        scene: 'Primeras amistades, primeras lecciones.'
+    },
+    {
+        año: 1991,
+        titulo: 'Formación con disciplina (1991–1992)',
+        desc: 'Cursé primero y segundo en el Colegio La Salle. Fue una etapa donde aprendí disciplina, respeto y estructura académica.',
+        scene: 'Disciplina y estructura: bases para el futuro.'
+    },
+    {
+        año: 1993,
+        titulo: 'Regreso a Paipa (1993–1994)',
+        desc: 'Volvimos a Paipa y continué tercero y cuarto en la Escuela Miguel Jiménez López. Regresar a mis raíces me dio perspectiva y fortaleza.',
+        scene: 'Volver a las raíces también es avanzar.'
+    },
+    {
+        año: 1995,
+        titulo: 'Adaptación constante (1995)',
+        desc: 'De nuevo en Bogotá, estudié quinto grado. Cambiar de entorno se convirtió en una habilidad natural.',
+        scene: 'Adaptarse se vuelve un talento con práctica.'
+    },
+    {
+        año: 1996,
+        titulo: 'Inicio del bachillerato (1996)',
+        desc: 'Comencé sexto grado. La adolescencia trajo nuevos retos, identidad y carácter.',
+        scene: 'Reto, identidad y carácter.'
+    },
+    {
+        año: 1999,
+        titulo: 'Primer trabajo formal (1999–2002)',
+        desc: 'Trabajé como Caddie de Golf y llegué a Primera Categoría. Aprendí disciplina, servicio y excelencia.',
+        scene: 'Disciplina y servicio: entrenamientos para la vida.'
+    },
+    {
+        año: 1997,
+        titulo: 'Bachillerato en Cajicá (1997–2001)',
+        desc: 'Después nos fuimos a vivir a Cajicá, Cundinamarca. Allí terminé mis estudios de bachiller académico en el Colegio Academia Legión Británica, entre 1997 y 2001. Fue una etapa que consolidó mi disciplina, mis amistades y la idea de que la constancia abre puertas.',
+        scene: 'Cajicá: constancia y disciplina para cerrar una etapa.'
+    },
+    {
+        año: 2002,
+        titulo: 'Experiencia empresarial (2002–2003)',
+        desc: 'Trabajé en Alquería como Auxiliar de reparto a clientes especiales. Responsabilidad y puntualidad se volvieron esenciales.',
+        scene: 'Responsabilidad + puntualidad = confianza.'
+    },
+    {
+        año: 2003,
+        titulo: 'Seguridad y carácter (2003–2005)',
+        desc: 'Me formé en vigilancia y trabajé como guardia canino. Fue una etapa que fortaleció mi carácter y disciplina.',
+        scene: 'Carácter forjado con disciplina.'
+    },
+    {
+        año: 2005,
+        titulo: 'Nace Michelle (2005)',
+        desc: 'El nacimiento de mi hija cambió completamente mi mentalidad. Ya no trabajaba solo por mí.',
+        scene: 'La familia redefine el propósito.'
+    },
+    {
+        año: 2005,
+        titulo: 'Crecimiento en construcción (2005–2018)',
+        desc: 'Crecí desde auxiliar hasta residente de estructura. Participé en centros comerciales, aeropuertos, hidroeléctricas y proyectos de vivienda.',
+        scene: 'Crecimiento profesional: del esfuerzo al liderazgo.'
+    },
+    {
+        año: 2011,
+        titulo: 'Ingeniería Civil (2011)',
+        desc: 'Inicié Ingeniería Civil. Aunque fue solo un semestre, sembró una inquietud académica que años después florecería.',
+        scene: 'Semillas académicas que luego florecen.'
+    },
+    {
+        año: 2013,
+        titulo: 'Matrimonio (2013)',
+        desc: 'Me casé con Isabel. Iniciamos juntos un proyecto de vida.',
+        scene: 'Construir en equipo: hogar y futuro.'
+    },
+    {
+        año: 2015,
+        titulo: 'Nace Santiago (2015)',
+        desc: 'Mi segundo hijo llegó a fortalecer aún más mi compromiso como padre.',
+        scene: 'Más amor, más compromiso.'
+    },
+    {
+        año: 2019,
+        titulo: 'Migración a Chile (2019)',
+        desc: 'Tomamos la decisión de emigrar. Vivimos el estallido social y la pandemia. Fue una etapa de resiliencia y aprendizaje.',
+        scene: 'Resiliencia en tiempos intensos.'
+    },
+    {
+        año: 2021,
+        titulo: 'Nace Samantha y regreso a Colombia (2021–2022)',
+        desc: 'En 2021 nació mi tercera hija. Un año después regresamos a Colombia buscando un nuevo rumbo profesional y familiar.',
+        scene: 'Familia y nuevos rumbos.'
+    },
+    {
+        año: 2023,
+        titulo: 'Transformación profesional (2023–2026)',
+        desc: 'Decidí cambiar de profesión. Inicié Tecnología en Desarrollo de Software en la Universidad del Valle. Hoy estoy en mi último semestre y ya trabajo desde casa, logrando el equilibrio que soñaba.',
+        scene: 'Reinvención: propósito + disciplina.'
+    }
+];
+
+function validarHitosData() {
+    const duplicadosExactos = [];
+    const incompletos = [];
+    const vistos = new Set();
+    let lastStartYear = -Infinity;
+
+    HITOS_DATA.forEach((h, index) => {
+        const año = h && (typeof h.año === 'number' || typeof h.año === 'string') ? String(h.año).trim() : '';
+        const titulo = h && typeof h.titulo === 'string' ? h.titulo.trim() : '';
+        const desc = h && typeof h.desc === 'string' ? h.desc.trim() : '';
+
+        if (!año || !titulo || !desc) {
+            incompletos.push({ index, año, titulo });
+        }
+
+        const key = `${año}||${titulo}||${desc}`;
+        if (vistos.has(key)) {
+            duplicadosExactos.push({ index, año, titulo });
+        } else {
+            vistos.add(key);
+        }
+
+        const match = titulo.match(/\((\d{4})\s*[–-]\s*\d{4}\)/);
+        const startYear = match && match[1] ? Number(match[1]) : Number(año);
+        if (!Number.isNaN(startYear)) {
+            if (startYear < lastStartYear) {
+                console.warn('[CV Runner] Orden no cronológico detectado en HITOS_DATA:', { index, año, titulo });
+            }
+            lastStartYear = Math.max(lastStartYear, startYear);
+        }
+    });
+
+    if (incompletos.length) {
+        console.warn('[CV Runner] Hitos incompletos en HITOS_DATA:', incompletos);
+    }
+    if (duplicadosExactos.length) {
+        console.warn('[CV Runner] Hitos duplicados exactos en HITOS_DATA:', duplicadosExactos);
+    }
+}
+
+validarHitosData();
+
+let hitosPendientes = HITOS_DATA.slice();
+
+let activeHitos = [];
+let hitosDesbloqueados = 0;
+let obstacles = [];
+let pairCounter = 0;
+let modalVisible = false;
+let modalPausedGame = false;
+const MAX_VIDAS = 3;
+let vidas = MAX_VIDAS;
+let reinicioProgramado = false;
+let invulnerableFrames = 0;
+let damageFlashFrames = 0;
+let screenShakeFrames = 0;
+
+const DAMAGE_FLASH_MAX = 18;
+const SCREEN_SHAKE_MAX = 16;
+
+// ==================== CONTROLES ====================
+let spacePressed = false;
+let paused = false;
+let speedFactor = 1;
+let spawnTimer = 0;
+let audioContext = null;
+let masterGain = null;
+let musicGain = null;
+let sfxGain = null;
+let retroLoopId = null;
+let retroNoteIndex = 0;
+const RETRO_MELODY = [262, 330, 392, 523, 392, 330, 349, 294];
+const RETRO_NOTE_DURATION = 0.32;
+let muted = true;
+let etapaAnterior = etapaActual;
+let stageMorphFrames = 0;
+const STAGE_MORPH_MAX = 22;
+// Volumen aumentado ~x4 (con tope de seguridad para evitar distorsión/clipping)
+const MUSIC_VOLUME = 0.64;
+const SFX_VOLUME = 1.0;
+const sfxLastPlayedAt = new Map();
+
+let juegoCompletado = false;
+let modalMode = 'hito'; // 'hito' | 'final' | 'resume'
+let finalizacionPendiente = false;
+
+const MAX_TIMELINE_ITEMS = 6;
+const stageBadges = {
+    origen: 'Origen y potencial',
+    bebe: 'Bebé: comienzo de vida',
+    infancia: 'Infancia escolar',
+    adolescente: 'Bachiller en marcha',
+    construccion: 'Trabajo en construcción',
+    adulto: 'Adulto responsable',
+    migrante: 'Migrante resiliente',
+    estudiante: 'Estudiante de software',
+    protech: 'Profesional tech'
+};
+
+const totalHitos = HITOS_DATA.length;
+hitoTotal.textContent = totalHitos;
+actualizarProgreso();
+actualizarAudio();
+agregarBadge(stageBadges[etapaActual]);
+actualizarVidasUI();
+// Importante: generarSegmento() usa constantes declaradas más abajo (const ...).
+// Si lo llamamos aquí, antes de inicializarlas, el navegador lanza un error (TDZ)
+// y deja de ejecutar todo el archivo, rompiendo botones y juego.
+setTimeout(() => {
+    generarSegmento();
+}, 0);
+
+function setPause(value) {
+    paused = value;
+    pauseBtn.textContent = paused ? 'Reanudar' : 'Pausar';
+}
+
+function togglePause() {
+    if (juegoCompletado) return;
+    setPause(!paused);
+}
+
+pauseBtn.addEventListener('click', togglePause);
+muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    actualizarAudio();
+    muteBtn.textContent = muted ? 'Sonido' : 'Mute';
+});
+
+tabButtons.forEach((tab) => {
+    tab.addEventListener('click', () => {
+        tabButtons.forEach((btn) => btn.classList.remove('active'));
+        panels.forEach((panel) => panel.classList.remove('active'));
+        tab.classList.add('active');
+        const target = document.getElementById(tab.dataset.target);
+        if (target) target.classList.add('active');
+    });
+});
+
+speedButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        speedButtons.forEach((btn) => btn.classList.remove('active'));
+        button.classList.add('active');
+        speedFactor = Number(button.dataset.speed) || 1;
+    });
+});
+
+if (modalCloseBtn) {
+    modalCloseBtn.addEventListener('click', cerrarModal);
+}
+
+if (modal) {
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target.classList.contains('modal__backdrop')) cerrarModal();
+    });
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modalVisible) {
+        cerrarModal();
+    }
+});
+
+function ajustarEscala() {
+    if (!page) return;
+    page.style.setProperty('--ui-scale', '1');
+    const safePadding = 16;
+    const available = window.innerHeight - safePadding;
+    const naturalHeight = page.scrollHeight;
+    let scale = available / naturalHeight;
+    if (scale > 1) scale = 1;
+    if (scale < 0.72) scale = 0.72;
+    page.style.setProperty('--ui-scale', scale.toFixed(3));
+}
+
+window.addEventListener('resize', ajustarEscala);
+window.addEventListener('load', ajustarEscala);
+
+document.addEventListener('keydown', (e) => {
+    activarAudio();
+    if (e.code === 'Space') {
+        spacePressed = true;
+        e.preventDefault();
+    }
+    if (e.code === 'KeyP') {
+        togglePause();
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') spacePressed = false;
+});
+
+canvas.addEventListener('pointerdown', () => {
+    activarAudio();
+    spacePressed = true;
+});
+
+canvas.addEventListener('pointerup', () => {
+    spacePressed = false;
+});
+
+// ==================== GENERAR HITOS (más lentos) ====================
+let frameCounter = 0;
+const FRAMES_POR_HITO = 260;  // evita superposiciones entre segmentos
+const VELOCIDAD_HITO = 2;     // mas lento
+const OBSTACLE_WIDTH = 26;
+const OBSTACLE_HEIGHT = 22;
+const OBSTACLE_TO_HITO_GAP = 240;
+const SEGMENT_SPAWN_GAP = 220;
+const HITO_WIDTH = 124;
+const HITO_HEIGHT = 34;
+const HITO_Y = groundY - 112;
+let cloudOffset = 0;
+
+function generarSegmento() {
+    if (hitosPendientes.length === 0) return;
+    const data = hitosPendientes.shift();
+    const pairId = pairCounter++;
+    const rightmostX = obtenerXMasDerecha();
+    const obstacleX = Math.max(canvas.width + 80, rightmostX + SEGMENT_SPAWN_GAP);
+
+    const obstacle = {
+        x: obstacleX,
+        y: groundY - OBSTACLE_HEIGHT,
+        width: OBSTACLE_WIDTH,
+        height: OBSTACLE_HEIGHT,
+        pairId,
+        cooldown: 0
+    };
+
+    const hito = {
+        x: obstacleX + OBSTACLE_TO_HITO_GAP,
+        y: HITO_Y,
+        width: HITO_WIDTH,
+        height: HITO_HEIGHT,
+        año: data.año,
+        titulo: data.titulo,
+        desc: data.desc,
+        scene: data.scene || '',
+        activado: false,
+        pairId
+    };
+
+    obstacles.push(obstacle);
+    activeHitos.push(hito);
+}
+
+// ==================== ACTUALIZACIÓN ====================
+function update() {
+    if (paused || juegoCompletado) return;
+
+    if (invulnerableFrames > 0) {
+        invulnerableFrames -= speedFactor;
+        if (invulnerableFrames < 0) invulnerableFrames = 0;
+    }
+
+    if (stageMorphFrames > 0) {
+        stageMorphFrames -= speedFactor;
+        if (stageMorphFrames < 0) stageMorphFrames = 0;
+    }
+
+    if (damageFlashFrames > 0) {
+        damageFlashFrames -= speedFactor;
+        if (damageFlashFrames < 0) damageFlashFrames = 0;
+    }
+
+    if (screenShakeFrames > 0) {
+        screenShakeFrames -= speedFactor;
+        if (screenShakeFrames < 0) screenShakeFrames = 0;
+    }
+
+    // Gravedad
+    player.ySpeed += player.gravity;
+    player.y += player.ySpeed;
+
+    if (player.y + player.height >= groundY) {
+        player.y = groundY - player.height;
+        player.ySpeed = 0;
+        player.grounded = true;
+    } else {
+        player.grounded = false;
+    }
+
+    if (spacePressed && player.grounded) {
+        player.ySpeed = player.jumpPower;
+        player.grounded = false;
+        reproducirSonidoSalto();
+    }
+
+    // Mover obstáculos
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+        obstacle.x -= VELOCIDAD_HITO * speedFactor;
+        if (obstacle.cooldown > 0) {
+            obstacle.cooldown -= speedFactor;
+        }
+
+        if (obstacle.x + obstacle.width < 0) {
+            obstacles.splice(i, 1);
+            continue;
+        }
+
+        if (obstacle.cooldown > 0) continue;
+
+        if (invulnerableFrames > 0) continue;
+
+        if (player.x < obstacle.x + obstacle.width &&
+            player.x + player.width > obstacle.x &&
+            player.y < obstacle.y + obstacle.height &&
+            player.y + player.height > obstacle.y) {
+            manejarColisionObstaculo(obstacle);
+            continue;
+        }
+    }
+
+    // Mover hitos
+    for (let i = activeHitos.length - 1; i >= 0; i--) {
+        let h = activeHitos[i];
+        h.x -= VELOCIDAD_HITO * speedFactor;
+
+        // Colisión con el jugador
+        if (!h.activado &&
+            player.x < h.x + h.width &&
+            player.x + player.width > h.x &&
+            player.y < h.y + h.height &&
+            player.y + player.height > h.y) {
+
+            h.activado = true;
+            actualizarEtapa(h.año);               // cambia la silueta y fondo
+            mostrarHito(h);
+            activeHitos.splice(i, 1);              // desaparece al tocarlo
+        }
+
+        // Eliminar si sale de la pantalla
+        if (h.x + h.width < 0) {
+            activeHitos.splice(i, 1);
+        }
+    }
+
+    // Generar nuevo hito cada cierto tiempo
+    frameCounter += speedFactor;
+    spawnTimer += speedFactor;
+    if (spawnTimer >= FRAMES_POR_HITO) {
+        spawnTimer = 0;
+        generarSegmento();
+    }
+}
+
+function mostrarHito(hito) {
+    const etiquetaAnio = obtenerEtiquetaAnio(hito);
+    hitoTitle.textContent = `${etiquetaAnio} — ${hito.titulo}`;
+    hitoDesc.textContent = 'Revisa la ventana emergente para conocer este evento.';
+    yearBadge.textContent = etiquetaAnio;
+    if (sceneText) {
+        sceneText.textContent = hito.scene || 'Cada etapa tiene una escena especial cuando el hito es clave.';
+    }
+    hitosDesbloqueados += 1;
+    agregarTimelineItem(hito);
+    actualizarProgreso();
+    agregarBadgeEtapa();
+    if (hitosDesbloqueados === totalHitos) {
+        agregarBadge('Mision completada');
+        // Última evolución visual: profesional tech consolidado
+        actualizarEtapa(9999);
+        // El flujo final debe iniciar DESPUÉS de cerrar el modal del último hito.
+        finalizacionPendiente = true;
+        juegoCompletado = true;
+        setPause(true);
+    }
+    reproducirSonidoHito();
+    eliminarObstaculoPareja(hito.pairId);
+    mostrarModal(`${etiquetaAnio} — ${hito.titulo}`, hito.desc, { mode: 'hito', wide: false, html: false });
+    infoBox.classList.remove('pulse');
+    void infoBox.offsetWidth;
+    infoBox.classList.add('pulse');
+}
+
+function obtenerEtiquetaAnio(hito) {
+    const titulo = hito && typeof hito.titulo === 'string' ? hito.titulo : '';
+    // Busca rangos estilo (1988–1990) o (1988-1990)
+    const match = titulo.match(/\((\d{4}\s*[–-]\s*\d{4})\)/);
+    if (match && match[1]) {
+        return match[1].replace(/\s+/g, '');
+    }
+    if (hito && (typeof hito.año === 'number' || typeof hito.año === 'string')) {
+        return String(hito.año);
+    }
+    return '----';
+}
+
+function manejarColisionObstaculo(obstacle) {
+    reproducirSonidoObstaculo();
+    perderVida();
+    if (vidas <= 0) return;
+
+    // Mantener la posición del obstáculo/hito para no desordenar el progreso.
+    // Solo reseteamos el jugador y damos un margen de invulnerabilidad.
+    player.x = 50;
+    player.y = groundY - player.height;
+    player.ySpeed = 0;
+    player.grounded = true;
+
+    invulnerableFrames = 46;
+    damageFlashFrames = DAMAGE_FLASH_MAX;
+    screenShakeFrames = SCREEN_SHAKE_MAX;
+    obstacle.cooldown = 28;
+}
+
+function actualizarVidasUI() {
+    if (!livesCount) return;
+    livesCount.textContent = String(vidas);
+}
+
+function perderVida() {
+    vidas = Math.max(0, vidas - 1);
+    // Leve retraso para que no choque feo con el sonido de colisión
+    reproducirSonidoVidaPerdida(0.06);
+    actualizarVidasUI();
+    if (vidas <= 0) {
+        if (!reinicioProgramado) {
+            reinicioProgramado = true;
+            setTimeout(() => {
+                reinicioProgramado = false;
+                reiniciarJuego();
+            }, 260);
+        }
+    }
+}
+
+function reiniciarJuego() {
+    juegoCompletado = false;
+    finalizacionPendiente = false;
+    modalMode = 'hito';
+
+    vidas = MAX_VIDAS;
+    hitosPendientes = HITOS_DATA.slice();
+    activeHitos = [];
+    obstacles = [];
+    pairCounter = 0;
+    hitosDesbloqueados = 0;
+    invulnerableFrames = 0;
+    damageFlashFrames = 0;
+    screenShakeFrames = 0;
+    spawnTimer = 0;
+    frameCounter = 0;
+    cloudOffset = 0;
+
+    etapaActual = 'origen';
+    etapaAnterior = etapaActual;
+    stageMorphFrames = 0;
+
+    player.x = 50;
+    player.y = groundY - player.height;
+    player.ySpeed = 0;
+    player.grounded = true;
+
+    yearBadge.textContent = '----';
+    hitoTitle.textContent = 'Esperando a que toques un evento...';
+    hitoDesc.textContent = 'Muévete para revelar cada capitulo.';
+    actualizarProgreso();
+    actualizarVidasUI();
+
+    if (timelineList) timelineList.innerHTML = '';
+    if (badgeList) badgeList.innerHTML = '';
+    agregarBadge(stageBadges[etapaActual]);
+
+    if (modalVisible) cerrarModal();
+    setPause(false);
+
+    generarSegmento();
+}
+
+function obtenerXMasDerecha() {
+    let maxX = 0;
+    obstacles.forEach((o) => {
+        maxX = Math.max(maxX, o.x + o.width);
+    });
+    activeHitos.forEach((h) => {
+        maxX = Math.max(maxX, h.x + h.width);
+    });
+    return maxX;
+}
+
+function calcularRespawnX() {
+    const rightmostX = obtenerXMasDerecha();
+    return Math.max(canvas.width + 120, rightmostX + SEGMENT_SPAWN_GAP);
+}
+
+function eliminarObstaculoPareja(pairId) {
+    if (pairId === undefined) return;
+    obstacles = obstacles.filter((ob) => ob.pairId !== pairId);
+}
+
+function mostrarModal(titulo, descripcion) {
+    if (!modal || !modalTitle || !modalDesc) return;
+    const options = arguments.length >= 3 ? arguments[2] : {};
+    const wide = Boolean(options && options.wide);
+    const html = Boolean(options && options.html);
+    modalMode = (options && options.mode) ? String(options.mode) : 'hito';
+
+    modalTitle.textContent = titulo;
+    if (html) {
+        modalDesc.innerHTML = String(descripcion);
+    } else {
+        modalDesc.textContent = String(descripcion);
+    }
+
+    if (modalDialog) {
+        modalDialog.classList.toggle('modal__dialog--wide', wide);
+    }
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    modalVisible = true;
+    if (!paused) {
+        modalPausedGame = true;
+        setPause(true);
+    } else {
+        modalPausedGame = false;
+    }
+}
+
+function cerrarModal() {
+    if (!modalVisible || !modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    modalVisible = false;
+    if (modalPausedGame && !juegoCompletado) {
+        setPause(false);
+    }
+    modalPausedGame = false;
+
+    // Si acabamos de cerrar el modal del ÚLTIMO hito, ahora sí mostramos la felicitación.
+    if (modalMode === 'hito' && finalizacionPendiente) {
+        finalizacionPendiente = false;
+        setTimeout(() => {
+            mostrarFinalizacion();
+        }, 220);
+        return;
+    }
+
+    if (modalMode === 'final') {
+        // transición suave: deja que el modal cierre antes de abrir el siguiente
+        setTimeout(() => {
+            mostrarHojaDeVidaModal();
+        }, 220);
+        return;
+    }
+}
+
+function mostrarFinalizacion() {
+    // Este modal puede dispararse tras cerrar el último hito; para ese punto
+    // ya marcamos juegoCompletado=true, así que NO debemos salir temprano aquí.
+    setPause(true);
+    reproducirSonidoTriunfo();
+    const mensaje =
+        '¡Felicitaciones! Completaste el juego.\n\n' +
+        'No importa la edad.\n' +
+        'No importa cuántas veces tengas que empezar de nuevo.\n' +
+        'Siempre es posible reinventarse si tienes disciplina, propósito y amor por tu familia.\n' +
+        'Cambiar no es retroceder… es evolucionar.';
+    mostrarModal('Juego completado', mensaje, { mode: 'final', wide: false, html: false });
+}
+
+function mostrarHojaDeVidaModal() {
+    const resumePanel = document.getElementById('resume-panel');
+    const resumeRoot = resumePanel ? resumePanel.querySelector('.resume') : null;
+    const contenido = resumeRoot ? resumeRoot.outerHTML : '<div>No se encontró la hoja de vida.</div>';
+    mostrarModal('Hoja de vida', contenido, { mode: 'resume', wide: true, html: true });
+}
+
+function actualizarProgreso() {
+    hitoCount.textContent = hitosDesbloqueados;
+    const progreso = totalHitos === 0 ? 0 : (hitosDesbloqueados / totalHitos) * 100;
+    progressBar.style.width = `${progreso}%`;
+}
+
+function agregarTimelineItem(hito) {
+    const li = document.createElement('li');
+    const year = document.createElement('span');
+    year.className = 'timeline__year';
+    year.textContent = hito.año;
+
+    const text = document.createElement('span');
+    text.className = 'timeline__text';
+    text.textContent = hito.titulo;
+
+    li.appendChild(year);
+    li.appendChild(text);
+    timelineList.appendChild(li);
+    while (timelineList.children.length > MAX_TIMELINE_ITEMS) {
+        timelineList.removeChild(timelineList.firstChild);
+    }
+}
+
+function agregarBadgeEtapa() {
+    if (etapaActual !== etapaAnterior) {
+        etapaAnterior = etapaActual;
+        const texto = stageBadges[etapaActual];
+        if (texto) agregarBadge(texto);
+    }
+}
+
+function agregarBadge(texto) {
+    const existe = Array.from(badgeList.children).some((badge) => badge.textContent === texto);
+    if (existe) return;
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = texto;
+    badgeList.appendChild(badge);
+}
+
+// Cambiar etapa según el año
+function actualizarEtapa(año) {
+    const prev = etapaActual;
+
+    // Mapeo de etapas solicitado (coherente con hitos actuales)
+    if (año >= 9999) etapaActual = 'protech';
+    else if (año < 1988) etapaActual = 'bebe';
+    else if (año >= 1988 && año <= 1995) etapaActual = 'infancia';
+    else if (año >= 1996 && año <= 2001) etapaActual = 'adolescente';
+    else if (año >= 2002 && año <= 2004) etapaActual = 'adulto';
+    else if (año >= 2005 && año <= 2018) etapaActual = 'construccion';
+    else if (año >= 2019 && año <= 2022) etapaActual = 'migrante';
+    else if (año >= 2023 && año <= 2026) etapaActual = 'estudiante';
+    else etapaActual = 'protech';
+
+    if (prev !== etapaActual) {
+        etapaAnterior = prev;
+        stageMorphFrames = STAGE_MORPH_MAX;
+    }
+}
+
+function activarAudio() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!audioContext) {
+        audioContext = new AudioContextClass();
+    }
+    audioContext.resume();
+
+    if (!masterGain) {
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = 0.95;
+        masterGain.connect(audioContext.destination);
+    }
+
+    if (!musicGain) {
+        musicGain = audioContext.createGain();
+        musicGain.gain.value = muted ? 0 : MUSIC_VOLUME;
+        musicGain.connect(masterGain);
+    }
+
+    if (!sfxGain) {
+        sfxGain = audioContext.createGain();
+        sfxGain.gain.value = muted ? 0 : SFX_VOLUME;
+        sfxGain.connect(masterGain);
+    }
+
+    iniciarLoopRetro();
+}
+
+function iniciarLoopRetro() {
+    if (!audioContext || retroLoopId) return;
+    retroLoopId = setInterval(() => {
+        reproducirNotaRetro();
+    }, RETRO_NOTE_DURATION * 1000);
+}
+
+function detenerLoopRetro() {
+    if (!retroLoopId) return;
+    clearInterval(retroLoopId);
+    retroLoopId = null;
+}
+
+function reproducirNotaRetro() {
+    if (!audioContext || muted) return;
+    const freq = RETRO_MELODY[retroNoteIndex % RETRO_MELODY.length];
+    retroNoteIndex += 1;
+
+    const osc = audioContext.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+    const noteGain = audioContext.createGain();
+    const baseVolume = 0.08;
+    noteGain.gain.setValueAtTime(baseVolume, audioContext.currentTime);
+    noteGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + RETRO_NOTE_DURATION);
+
+    osc.connect(noteGain);
+    noteGain.connect(musicGain || masterGain || audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + RETRO_NOTE_DURATION);
+}
+
+function actualizarAudio() {
+    if (!musicGain || !sfxGain) return;
+    musicGain.gain.value = muted ? 0 : MUSIC_VOLUME;
+    sfxGain.gain.value = muted ? 0 : SFX_VOLUME;
+}
+
+function puedeReproducirSfx(tipo, minIntervalSeconds) {
+    if (!audioContext) return false;
+    const last = sfxLastPlayedAt.get(tipo) || 0;
+    const now = audioContext.currentTime;
+    if (now - last < minIntervalSeconds) return false;
+    sfxLastPlayedAt.set(tipo, now);
+    return true;
+}
+
+function reproducirSonidoSalto() {
+    if (!audioContext) activarAudio();
+    if (!audioContext || muted) return;
+    if (!puedeReproducirSfx('jump', 0.08)) return;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(320, audioContext.currentTime);
+    osc.frequency.linearRampToValueAtTime(520, audioContext.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(sfxGain || masterGain || audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.2);
+}
+
+function reproducirSonidoHito() {
+    if (!audioContext) activarAudio();
+    if (!audioContext || muted) return;
+    if (!puedeReproducirSfx('hito', 0.14)) return;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(660, audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(990, audioContext.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.16, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.26);
+    osc.connect(gain);
+    gain.connect(sfxGain || masterGain || audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.26);
+}
+
+function reproducirSonidoObstaculo() {
+    if (!audioContext) activarAudio();
+    if (!audioContext || muted) return;
+    if (!puedeReproducirSfx('obstacle', 0.18)) return;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(90, audioContext.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.14, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(sfxGain || masterGain || audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.3);
+}
+
+function reproducirSonidoVidaPerdida(delaySeconds = 0) {
+    if (!audioContext) activarAudio();
+    if (!audioContext || muted) return;
+    if (!puedeReproducirSfx('life', 0.22)) return;
+
+    const startAt = audioContext.currentTime + Math.max(0, delaySeconds);
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(240, startAt);
+    osc.frequency.exponentialRampToValueAtTime(120, startAt + 0.22);
+    gain.gain.setValueAtTime(0.18, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.28);
+    osc.connect(gain);
+    gain.connect(sfxGain || masterGain || audioContext.destination);
+    osc.start(startAt);
+    osc.stop(startAt + 0.28);
+}
+
+function reproducirSonidoTriunfo() {
+    if (!audioContext) activarAudio();
+    if (!audioContext || muted) return;
+    if (!puedeReproducirSfx('victory', 0.9)) return;
+
+    // Arpegio retro corto (3 notas ascendentes)
+    const now = audioContext.currentTime;
+    const notas = [523, 659, 784];
+    notas.forEach((freq, index) => {
+        const startAt = now + index * 0.13;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startAt);
+        gain.gain.setValueAtTime(0.22, startAt);
+        gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.18);
+        osc.connect(gain);
+        gain.connect(sfxGain || masterGain || audioContext.destination);
+        osc.start(startAt);
+        osc.stop(startAt + 0.18);
+    });
+}
+
+// ==================== DIBUJAR PERSONAJE ====================
+function dibujarPersonaje() {
+    const alphaNew = stageMorphFrames > 0 ? (1 - (stageMorphFrames / STAGE_MORPH_MAX)) : 1;
+    const alphaOld = stageMorphFrames > 0 ? 1 - alphaNew : 0;
+
+    if (alphaOld > 0.001) {
+        ctx.save();
+        ctx.globalAlpha = alphaOld;
+        dibujarPersonajePorEtapa(etapaAnterior);
+        ctx.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha = alphaNew;
+    dibujarPersonajePorEtapa(etapaActual);
+    ctx.restore();
+}
+
+function dibujarPersonajePorEtapa(etapa) {
+    ctx.save();
+    const t = frameCounter * 0.12;
+    const bob = Math.sin(t) * 1.2;
+
+    // Mantener siempre el mismo tamaño base (sin cambiar hitbox).
+    const originX = player.x + player.width / 2;
+    const originY = player.y + player.height / 2 + bob;
+    ctx.translate(originX, originY);
+
+    if (etapa === 'origen') {
+        dibujarFormaOrigen(t);
+        ctx.restore();
+        return;
+    }
+
+    const skin = obtenerSkin(etapa);
+    dibujarHumanoLateralMinimalista(t, skin);
+    ctx.restore();
+}
+
+function dibujarFormaOrigen(t) {
+    // Forma orgánica simbólica (celular/abstracta), sobria y translúcida
+    const wobble = 0.9 + Math.sin(t * 0.9) * 0.06;
+    ctx.scale(wobble, wobble);
+
+    const grad = ctx.createRadialGradient(-6, -6, 2, 0, 0, 26);
+    grad.addColorStop(0, 'rgba(96, 165, 250, 0.55)');
+    grad.addColorStop(1, 'rgba(16, 185, 129, 0.18)');
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.bezierCurveTo(14, -18, 22, -8, 20, 4);
+    ctx.bezierCurveTo(18, 18, 6, 22, -6, 18);
+    ctx.bezierCurveTo(-22, 12, -22, -6, -10, -16);
+    ctx.bezierCurveTo(-6, -19, -2, -19, 0, -18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Núcleo/potencial
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.beginPath();
+    ctx.arc(-4, -4, 5 + Math.sin(t * 1.2) * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function dibujarHumanoLateralMinimalista(t, skin) {
+    // Anime cel-shaded (perfil): contorno uniforme + sombras duras + rasgos faciales mínimos.
+    // Mantiene el tamaño base: todo se dibuja alrededor del centro del hitbox.
+    const walk = Math.sin(t * 1.7);
+    const stride = Math.sin(t * 1.25);
+    const bounce = Math.sin(t * 1.05) * 0.35;
+    const has = (flag) => typeof skin.detalles === 'string' && skin.detalles.includes(flag);
+
+    // Contorno base
+    const outline = 'rgba(15, 23, 42, 0.78)';
+
+    // Sombra en el suelo
+    ctx.save();
+    ctx.globalAlpha *= 0.33;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 12, 3.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(0, bounce);
+
+    // === Piernas (cel shaded) ===
+    const legFrontX = 3;
+    const legBackX = -2;
+    const legY0 = 8;
+    const legY1 = 18;
+    const legSwing = stride * 2.4;
+    const legWidth = 4.6;
+
+    // Pierna atrás
+    dibujarCapsule(legBackX, legY0, legBackX - 5 - legSwing, legY1, legWidth, skin.pantalon, outline);
+    // Pierna adelante
+    dibujarCapsule(legFrontX, legY0, legFrontX + 6 + legSwing, legY1, legWidth, skin.pantalon, outline);
+
+    if (has('boots')) {
+        dibujarBotaAnime(legBackX - 7 - legSwing, legY1, outline);
+        dibujarBotaAnime(legFrontX + 8 + legSwing, legY1, outline);
+    }
+
+    // === Torso/ropa ===
+    const torso = { x: -8, y: -8, w: 18, h: 18, r: 6 };
+    dibujarRoundedRect(torso.x, torso.y, torso.w, torso.h, torso.r, skin.ropa, outline);
+
+    // Sombras duras (cel shading) sobre torso
+    ctx.save();
+    ctx.globalAlpha *= 0.22;
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.beginPath();
+    ctx.moveTo(torso.x + 8, torso.y + 4);
+    ctx.lineTo(torso.x + torso.w - 2, torso.y + 7);
+    ctx.lineTo(torso.x + torso.w - 4, torso.y + torso.h - 3);
+    ctx.lineTo(torso.x + 10, torso.y + torso.h - 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Highlight
+    ctx.save();
+    ctx.globalAlpha *= 0.18;
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    ctx.beginPath();
+    ctx.roundRect(torso.x + 2, torso.y + 2, torso.w - 8, 5, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // === Brazos ===
+    const armSwing = walk * 2.2;
+    dibujarCapsule(2, -1, 12, 2 + armSwing, 3.8, skin.ropaOscura, outline);
+    dibujarCapsule(-1, -1, -10, 3 - armSwing * 0.9, 3.6, skin.ropaOscura, outline);
+
+    // === Cuello ===
+    dibujarCapsule(5, -10, 3.8, -6.5, 3.2, skin.piel, outline);
+
+    // === Cabeza anime (perfil) ===
+    // Cabeza un poco más grande para estilo anime, sin exceder el hitbox.
+    const headX = 10.5;
+    const headY = -15.2;
+    const headR = 8.2;
+
+    // Base cara
+    ctx.fillStyle = skin.piel;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(headX, headY, headR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Mandíbula / barbilla (perfil)
+    ctx.fillStyle = skin.piel;
+    ctx.beginPath();
+    ctx.moveTo(headX + 2, headY + 4);
+    ctx.quadraticCurveTo(headX + 9, headY + 6, headX + 8.5, headY + 10);
+    ctx.quadraticCurveTo(headX + 2, headY + 10, headX + 1.5, headY + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Sombra dura en cara
+    ctx.save();
+    ctx.globalAlpha *= 0.16;
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.beginPath();
+    ctx.arc(headX + 2.5, headY + 2, headR - 1.5, 0.2, 1.65);
+    ctx.fill();
+    ctx.restore();
+
+    // Ojo (almendrado) + brillo
+    ctx.save();
+    ctx.translate(headX + 4.2, headY - 1.0);
+    ctx.rotate(-0.05);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 2.4, 1.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.arc(0.6, -0.3, 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Ceja
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(headX + 2.3, headY - 3.7);
+    ctx.lineTo(headX + 6.7, headY - 4.2);
+    ctx.stroke();
+
+    // Nariz
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(headX + 9.2, headY + 0.2);
+    ctx.lineTo(headX + 11.2, headY + 1.2);
+    ctx.stroke();
+
+    // Boca
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(headX + 6.6, headY + 6.8);
+    ctx.lineTo(headX + 9.0, headY + 6.6);
+    ctx.stroke();
+
+    // Cabello (sobrio, cambia con etapa)
+    dibujarCabelloAnime(etapaActual, headX, headY, headR, outline);
+
+    // === Accesorios por etapa ===
+    if (has('uniform')) {
+        // Corbata/línea uniforme
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(2, -4);
+        ctx.lineTo(8, 4);
+        ctx.stroke();
+    }
+
+    if (has('helmet')) {
+        dibujarCascoAnime(headX, headY, outline, skin.acento);
+        // Chaleco reflectivo
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.58)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(torso.x + 2, torso.y + 7);
+        ctx.lineTo(torso.x + torso.w - 3, torso.y + 7);
+        ctx.stroke();
+    }
+
+    if (has('migrate')) {
+        // Bufanda / capa neutra
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.32)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(1, -6);
+        ctx.lineTo(-9, 0);
+        ctx.stroke();
+    }
+
+    if (has('backpack')) {
+        // Mochila
+        dibujarRoundedRect(-15, -6, 8, 14, 4, 'rgba(15, 23, 42, 0.55)', outline);
+        ctx.save();
+        ctx.globalAlpha *= 0.35;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.beginPath();
+        ctx.roundRect(-13.5, -4.5, 5, 3, 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    if (has('laptop')) {
+        // Laptop en mano (sobria)
+        dibujarRoundedRect(12, 1, 10, 6, 2, 'rgba(15, 23, 42, 0.55)', outline);
+        ctx.save();
+        ctx.globalAlpha *= 0.28;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(13, 2, 6, 1.5);
+        ctx.restore();
+    }
+
+    if (has('protech')) {
+        // Blazer / solapa
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(2, -5);
+        ctx.lineTo(7, 3);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+    ctx.restore();
+}
+
+function dibujarCapsule(x0, y0, x1, y1, width, fill, stroke) {
+    ctx.save();
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const angle = Math.atan2(dy, dx);
+    const len = Math.hypot(dx, dy);
+    ctx.translate(x0, y0);
+    ctx.rotate(angle);
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(0, -width / 2, len, width, width / 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // cel shading: sombra dura
+    ctx.globalAlpha *= 0.16;
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.beginPath();
+    ctx.roundRect(len * 0.35, -width / 2, len * 0.55, width, width / 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function dibujarBotaAnime(x, y, outline) {
+    ctx.save();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+    ctx.beginPath();
+    ctx.roundRect(x - 3.2, y - 2.2, 7.4, 4.4, 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+}
+
+function dibujarCabelloAnime(etapa, headX, headY, headR, outline) {
+    // Cabello sobrio con variación leve por etapa
+    const hair = 'rgba(15, 23, 42, 0.65)';
+    const hair2 = 'rgba(2, 6, 23, 0.55)';
+    const babyHair = 'rgba(15, 23, 42, 0.25)';
+
+    ctx.save();
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+
+    let fill = hair;
+    let shade = hair2;
+    if (etapa === 'bebe') {
+        fill = babyHair;
+        shade = 'rgba(0, 0, 0, 0.18)';
+    }
+
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(headX - 1, headY - headR + 2);
+    ctx.quadraticCurveTo(headX + 10, headY - headR + 1, headX + 9.2, headY - 2);
+    ctx.quadraticCurveTo(headX + 6, headY - 6, headX + 3.2, headY - 7.2);
+    ctx.quadraticCurveTo(headX + 1, headY - 8.0, headX - 1, headY - headR + 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // sombra dura en cabello
+    ctx.globalAlpha *= 0.2;
+    ctx.fillStyle = shade;
+    ctx.beginPath();
+    ctx.moveTo(headX + 3.2, headY - 7.2);
+    ctx.quadraticCurveTo(headX + 8.8, headY - 6.8, headX + 9.2, headY - 2);
+    ctx.quadraticCurveTo(headX + 6.2, headY - 4.2, headX + 4.5, headY - 5.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+function dibujarCascoAnime(headX, headY, outline, accent) {
+    ctx.save();
+    ctx.fillStyle = accent;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2;
+    // Cúpula
+    ctx.beginPath();
+    ctx.ellipse(headX, headY - 4.8, 9.2, 5.4, 0, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Visera
+    ctx.beginPath();
+    ctx.roundRect(headX + 1.5, headY - 8.0, 9.0, 3.2, 1.6);
+    ctx.fill();
+    ctx.stroke();
+    // sombra dura
+    ctx.globalAlpha *= 0.18;
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.beginPath();
+    ctx.roundRect(headX - 2.5, headY - 9.0, 6.0, 3.0, 1.4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function dibujarRoundedRect(x, y, w, h, r, fill, stroke) {
+    const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) {
+        ctx.fillStyle = fill;
+        ctx.fill();
+    }
+    if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+}
+
+function obtenerSkin(etapa) {
+    switch (etapa) {
+        case 'bebe':
+            return { piel: 'rgba(244, 204, 186, 0.95)', ropa: 'rgba(148, 163, 184, 0.85)', ropaOscura: 'rgba(30, 41, 59, 0.7)', pantalon: 'rgba(100, 116, 139, 0.9)', acento: 'rgba(59, 130, 246, 0.6)', detalles: '' };
+        case 'infancia':
+            return { piel: 'rgba(242, 200, 180, 0.95)', ropa: 'rgba(51, 65, 85, 0.88)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(30, 41, 59, 0.9)', acento: 'rgba(226, 232, 240, 0.75)', detalles: 'uniform' };
+        case 'adolescente':
+            return { piel: 'rgba(240, 198, 176, 0.95)', ropa: 'rgba(55, 65, 81, 0.88)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(31, 41, 55, 0.92)', acento: 'rgba(148, 163, 184, 0.7)', detalles: '' };
+        case 'construccion':
+            return { piel: 'rgba(236, 192, 168, 0.95)', ropa: 'rgba(180, 83, 9, 0.75)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(51, 65, 85, 0.92)', acento: 'rgba(249, 115, 22, 0.85)', detalles: 'helmet|boots' };
+        case 'adulto':
+            return { piel: 'rgba(234, 188, 160, 0.95)', ropa: 'rgba(30, 41, 59, 0.9)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(17, 24, 39, 0.92)', acento: 'rgba(148, 163, 184, 0.55)', detalles: '' };
+        case 'migrante':
+            return { piel: 'rgba(232, 186, 160, 0.95)', ropa: 'rgba(51, 65, 85, 0.9)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(30, 41, 59, 0.92)', acento: 'rgba(100, 116, 139, 0.65)', detalles: 'migrate' };
+        case 'estudiante':
+            return { piel: 'rgba(232, 186, 160, 0.95)', ropa: 'rgba(59, 130, 246, 0.22)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(30, 41, 59, 0.92)', acento: 'rgba(59, 130, 246, 0.55)', detalles: 'backpack|laptop' };
+        case 'protech':
+            return { piel: 'rgba(232, 186, 160, 0.95)', ropa: 'rgba(15, 23, 42, 0.88)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(17, 24, 39, 0.92)', acento: 'rgba(226, 232, 240, 0.65)', detalles: 'protech' };
+        default:
+            return { piel: 'rgba(236, 192, 168, 0.95)', ropa: 'rgba(51, 65, 85, 0.9)', ropaOscura: 'rgba(15, 23, 42, 0.75)', pantalon: 'rgba(30, 41, 59, 0.92)', acento: 'rgba(148, 163, 184, 0.55)', detalles: '' };
+    }
+}
+
+// ==================== DIBUJAR FONDO (cambia con la etapa) ====================
+function dibujarFondo() {
+    const palette = obtenerPaleta(etapaActual);
+    const gradient = ctx.createLinearGradient(0, 0, 0, groundY);
+    gradient.addColorStop(0, palette.top);
+    gradient.addColorStop(1, palette.bottom);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, groundY);
+
+    dibujarNubes();
+    dibujarColinas();
+
+    ctx.fillStyle = palette.ground;
+    ctx.fillRect(0, groundY, canvas.width, groundHeight);
+}
+
+function obtenerPaleta(etapa) {
+    switch (etapa) {
+        case 'bebe':
+            return { top: '#ffd6e7', bottom: '#ffeef7', ground: '#d97706' };
+        case 'niño':
+            return { top: '#c4f1ff', bottom: '#e0f7ff', ground: '#16a34a' };
+        case 'adolescente':
+            return { top: '#c8facc', bottom: '#ecfde4', ground: '#15803d' };
+        case 'caddie':
+            return { top: '#fef3c7', bottom: '#fff7ed', ground: '#65a30d' };
+        case 'vigilante':
+            return { top: '#cbd5f5', bottom: '#e2e8f0', ground: '#475569' };
+        case 'construccion':
+            return { top: '#fde68a', bottom: '#ffedd5', ground: '#b45309' };
+        case 'estudiante':
+            return { top: '#e9d5ff', bottom: '#f5f3ff', ground: '#6d28d9' };
+        default:
+            return { top: '#cbd5f5', bottom: '#e2e8f0', ground: '#475569' };
+    }
+}
+
+function dibujarNubes() {
+    if (!paused) {
+        cloudOffset += 0.4;
+    }
+    const baseX = -120 + (cloudOffset % (canvas.width + 240));
+    dibujarNube(baseX, 60, 1.1, 0.7);
+    dibujarNube(baseX + 260, 90, 0.8, 0.6);
+    dibujarNube(baseX + 520, 50, 1.3, 0.5);
+}
+
+function dibujarNube(x, y, scale, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+    ctx.arc(20, -8, 16, 0, Math.PI * 2);
+    ctx.arc(40, 0, 18, 0, Math.PI * 2);
+    ctx.arc(20, 8, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function dibujarColinas() {
+    const offset = frameCounter * 0.6;
+    dibujarColina(groundY - 20, 'rgba(15, 23, 42, 0.08)', offset * 0.6, 90);
+    dibujarColina(groundY - 10, 'rgba(15, 23, 42, 0.12)', offset, 70);
+}
+
+function dibujarColina(baseY, color, offset, step) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-50, groundY);
+    for (let x = -50; x <= canvas.width + 50; x += step) {
+        const y = baseY + Math.sin((x + offset) / 120) * 12;
+        ctx.quadraticCurveTo(x + step / 2, y - 16, x + step, baseY);
+    }
+    ctx.lineTo(canvas.width + 50, groundY);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function dibujarObstaculos() {
+    ctx.save();
+    obstacles.forEach((obstaculo) => {
+        const gradient = ctx.createLinearGradient(0, obstaculo.y, 0, obstaculo.y + obstaculo.height);
+        gradient.addColorStop(0, '#1f2937');
+        gradient.addColorStop(1, '#0f172a');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(obstaculo.x, obstaculo.y, obstaculo.width, obstaculo.height);
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obstaculo.x, obstaculo.y, obstaculo.width, obstaculo.height);
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.32)';
+        for (let stripeX = obstaculo.x + 3; stripeX < obstaculo.x + obstaculo.width; stripeX += 6) {
+            ctx.fillRect(stripeX, obstaculo.y + 3, 2, obstaculo.height - 6);
+        }
+    });
+    ctx.restore();
+}
+
+function dibujarHitos() {
+    ctx.save();
+    ctx.font = '700 14px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    activeHitos.forEach((h) => {
+        // Poste
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(h.x + h.width / 2, groundY);
+        ctx.lineTo(h.x + h.width / 2, h.y + h.height);
+        ctx.stroke();
+
+        // Placa flotante redondeada
+        const radius = 10;
+        const x = h.x;
+        const y = h.y;
+        const w = h.width;
+        const ht = h.height;
+
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.92)';
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + ht - radius);
+        ctx.quadraticCurveTo(x + w, y + ht, x + w - radius, y + ht);
+        ctx.lineTo(x + radius, y + ht);
+        ctx.quadraticCurveTo(x, y + ht, x, y + ht - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Brillo sutil
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.fillRect(x + 8, y + 6, w - 16, 6);
+
+        // Texto
+        ctx.fillStyle = '#0b1220';
+        ctx.fillText(obtenerEtiquetaAnio(h), h.x + h.width / 2, h.y + h.height / 2 + 1);
+    });
+    ctx.restore();
+}
+
+// ==================== DIBUJADO PRINCIPAL ====================
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Efecto breve al perder vida: sacudida de pantalla
+    if (!paused && screenShakeFrames > 0) {
+        const progress = screenShakeFrames / SCREEN_SHAKE_MAX;
+        const shakeX = Math.sin(frameCounter * 0.9) * 6 * progress;
+        const shakeY = Math.cos(frameCounter * 1.1) * 4 * progress;
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+        dibujarFondo();
+        dibujarObstaculos();
+        dibujarHitos();
+        dibujarPersonaje();
+        if (paused) {
+            dibujarPausa();
+        }
+        ctx.restore();
+    } else {
+        dibujarFondo();
+        dibujarObstaculos();
+        dibujarHitos();
+        dibujarPersonaje();
+        if (paused) {
+            dibujarPausa();
+        }
+    }
+
+    // Flash rojo sutil (independiente de la sacudida)
+    if (damageFlashFrames > 0) {
+        const alpha = 0.22 * (damageFlashFrames / DAMAGE_FLASH_MAX);
+        ctx.save();
+        ctx.fillStyle = `rgba(220, 38, 38, ${alpha.toFixed(3)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    }
+}
+
+function dibujarPausa() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 22px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Pausa', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.font = '400 14px "Space Grotesk", sans-serif';
+    ctx.fillText('Presiona P o el boton para continuar', canvas.width / 2, canvas.height / 2 + 18);
+    ctx.restore();
+}
+
+// ==================== BUCLE PRINCIPAL ====================
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
