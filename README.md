@@ -1,5 +1,18 @@
 # Juego Interactivo de Evolución de Vida – Luis Carlos Pedraza
 
+## 🔗 Enlaces
+- **Demo (GitHub Pages):** https://luiscpedraza.github.io/CV_Interactiva/
+- **Versión standalone (un solo archivo):** https://luiscpedraza.github.io/CV_Interactiva/standalone.html
+
+## ▶️ Cómo usar
+- Abre la **Demo** (arriba) y presiona **Espacio** (o toca el canvas) para saltar.
+- El **audio** se activa después de la primera interacción (click/tecla), por políticas del navegador.
+
+**Controles:**
+- **Saltar:** barra espaciadora o tap/click en el canvas
+- **Pausar/Reanudar:** tecla **P** o botón “Pausar”
+- **Sonido:** botón “Sonido/Mute”
+
 ## 1. 📌 Descripción del Proyecto
 Este proyecto es un **juego 2D en HTML5 Canvas** que representa, de forma interactiva, la evolución personal y profesional de **Luis Carlos Pedraza** a través de hitos cronológicos.
 
